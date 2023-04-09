@@ -11,8 +11,15 @@ POST http://localhost:3001/api/notes HTTP/1.1
 content-type: application/json
 
 {
-    "content": "A new note",
-    "important": false,
+    "content": "Another note"
+}
+
+###
+PUT http://localhost:3001/api/notes/3 HTTP/1.1
+content-type: application/json
+
+{ 
+  "important":true
 }
 
 ###

@@ -21,42 +21,40 @@ const requestTime = (req, res, next) => {
 };
 app.use(requestTime);
 
-app.get("/", (request, response) => {
-  response.send("<h1>root</h1>");
+app.get("/", (req, res) => {
+  res.send("<h1>root</h1>");
 });
 
-app.get("/api/notes", (request, response) => {
-  response.json(notes);
+app.get("/api/notes", (req, res) => {
+  res.json(notes);
 });
 
-app.get("/api/notes/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const note = notes.find((note) => note.id === id);
+app.get("/api/notes/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const note = notes.find((n) => n.id === id);
   if (note) {
-    response.json(note);
+    res.json(note);
   } else {
-    response.status(404).end();
+    res.status(404).end();
   }
 });
 
-app.delete("/api/notes/:id", (request, response) => {
-  const id = Number(request.params.id);
-  notes = notes.filter((note) => note.id !== id);
-  response.status(204).end();
+app.delete("/api/notes/:id", (req, res) => {
+  const id = Number(req.params.id);
+  notes = notes.filter((n) => n.id !== id);
+  res.status(204).end();
 });
 
 const generateId = () => {
-  function getRandomInt(max) {
-    return Math.floor(Math.random() * max);
-  }
   const maxId = notes.length > 0 ? Math.max(...notes.map((n) => n.id)) : 0;
-  return maxId + getRandomInt(99999999);
+  return maxId + 1;
 };
 
-app.post("/api/notes", (request, response) => {
-  const body = request.body;
+app.post("/api/notes", (req, res) => {
+  const body = req.body;
+
   if (!body.content) {
-    return response.status(400).json({
+    return res.status(400).json({
       error: "content missing",
     });
   }
@@ -67,31 +65,27 @@ app.post("/api/notes", (request, response) => {
   };
 
   if (note.content.length < 1) {
-    return response.status(400).json({
+    return res.status(400).json({
       error: "content missing",
     });
-  } else if (note.important.length < 1) {
-    return response.status(400).json({
-      error: "importance missing",
-    });
-  } else if (note.content.length > 0 && note.important.length > 0) {
+  } else if (note.content.length > 0) {
     notes = notes.concat(note);
-    response.json(note);
+    res.json(note);
   }
 });
 
-const requestLogger = (req, res, next) => {
-  console.log("Method:", req.method);
-  console.log("Path:  ", req.path);
-  console.log("Body:  ", req.body);
-  console.log("---");
-  next();
-};
-app.use(requestLogger);
-const unknownEndpoint = (req, res) => {
-  res.status(404).send({error: "unknown endpoint"});
-};
-app.use(unknownEndpoint);
+app.put("/api/notes/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const body = req.body;
+  const note = notes.find((n) => n.id === id);
+  const changedNote = {
+    ...note,
+    important: notes.important ? !body.important : body.important,
+  };
+  const notesCopy = [...notes];
+  notes = notesCopy.map((n) => (n.id !== id ? n : changedNote));
+  res.json(changedNote);
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
